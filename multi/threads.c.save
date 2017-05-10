@@ -1,0 +1,95 @@
+#include <stdio.h>
+02
+	#include <stdlib.h>
+03
+	#include <pthread.h>
+04
+	 
+05
+	void *print_message_function( void *ptr );
+06
+	 
+07
+	main()
+08
+	{
+09
+	     pthread_t thread1, thread2;
+10
+	     const char *message1 = "Thread 1";
+11
+	     const char *message2 = "Thread 2";
+12
+	     int  iret1, iret2;
+13
+	 
+14
+	    /* Create independent threads each of which will execute function */
+15
+	 
+16
+	     iret1 = pthread_create( &thread1, NULL, print_message_function, (void*) message1);
+17
+	     if(iret1)
+18
+	     {
+19
+	         fprintf(stderr,"Error - pthread_create() return code: %d\n",iret1);
+20
+	         exit(EXIT_FAILURE);
+21
+	     }
+22
+	 
+23
+	     iret2 = pthread_create( &thread2, NULL, print_message_function, (void*) message2);
+24
+	     if(iret2)
+25
+	     {
+26
+	         fprintf(stderr,"Error - pthread_create() return code: %d\n",iret2);
+27
+	         exit(EXIT_FAILURE);
+28
+	     }
+29
+	 
+30
+	     printf("pthread_create() for thread 1 returns: %d\n",iret1);
+31
+	     printf("pthread_create() for thread 2 returns: %d\n",iret2);
+32
+	 
+33
+	     /* Wait till threads are complete before main continues. Unless we  */
+34
+	     /* wait we run the risk of executing an exit which will terminate   */
+35
+	     /* the process and all threads before the threads have completed.   */
+36
+	 
+37
+	     pthread_join( thread1, NULL);
+38
+	     pthread_join( thread2, NULL);
+39
+	 
+40
+	     exit(EXIT_SUCCESS);
+41
+	}
+42
+	 
+43
+	void *print_message_function( void *ptr )
+44
+	{
+45
+	     char *message;
+46
+	     message = (char *) ptr;
+47
+	     printf("%s \n", message);
+48
+	}
