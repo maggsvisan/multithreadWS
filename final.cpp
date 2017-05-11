@@ -16,7 +16,7 @@
 #include <pthread.h>
 #include <stdio.h>
 
-#define NUM_THREADS 4
+#define NUM_THREADS 2
 
 using namespace cv;
 using namespace std;
@@ -35,7 +35,7 @@ struct myStruct{
   int b;
 }thStruct[NUM_THREADS];
 
-Mat image= imread("imagen2.png");
+Mat image= imread("bin2.jpg");
 Mat newreg(image.rows,image.cols,CV_8UC3,Scalar(255,255,255));
 int baseIntervalo;
  
@@ -57,11 +57,14 @@ Point p, ptemp;
   int rr = th->r;
   int gg = th->g;
   int bb = th->b;
+cout<< "tid:"<<tid<< endl;
+
 
 pthread_mutex_lock(&mutexc);
-for (int j=inicio; j <= final ; j++)
+
+for (int j=inicio; j <= inicio+baseIntervalo ; j++)
 {//las columnas son el eje de las x
-    for (int i=1; i<rowNum; i++)
+    for (int i=1; i<image.rows; i++)
       {//las filas son el eje de las y  
         //if (tid ==9)       
             // cout<< j<<","<<i<< endl;  
@@ -119,7 +122,7 @@ for (int j=inicio; j <= final ; j++)
 void watershed(Mat image, Mat newreg){
     int row=0;
     row= image.rows;
-    //erode(image, image, Mat(), Point(-1,-1),2);
+    erode(image, image, Mat(), Point(-1,-1),2);
     pthread_t threads[NUM_THREADS];
     int rc;
     long t;
@@ -131,7 +134,7 @@ void watershed(Mat image, Mat newreg){
     start=clock();
 
     for(t=0; t<NUM_THREADS; t++){
-      thStruct[t].thRow = baseIntervalo;
+      thStruct[t].thRow = row;
       thStruct[t].thId = t;
       thStruct[t].index = t*baseIntervalo+1;
       thStruct[t].r = rand()%256;
@@ -139,7 +142,7 @@ void watershed(Mat image, Mat newreg){
       thStruct[t].b = rand()%256;
       
       if(t==NUM_THREADS-1){
-        thStruct[t].end = image.cols;
+        thStruct[t].end = image.rows;
       }
       else{
         thStruct[t].end = (t+1)*baseIntervalo;
