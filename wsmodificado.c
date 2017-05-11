@@ -38,30 +38,34 @@ struct myStruct{
 Mat image= imread("imagen2.png");
 Mat newreg(image.rows,image.cols,CV_8UC3,Scalar(255,255,255));
 int baseIntervalo;
-
-void *myThreadRoutine(void *threadid){
+ 
+void *myThreadRoutine(void *thStr){
 
 queue<Point> coords; //guarda los vecinos de objetos
 queue<Point> temp;
 Point p, ptemp;
 
-    int xp=0;
-    int yp=0;
+  int xp=0;
+  int yp=0;
+  int bb=0;
+  int gg=0;
+  int rr=0;
 
-    int bb=0;
-    int gg=0;
-    int rr=0;
-  
-  long tid;
-  tid = (long)threadid;
+  struct thStruct *th =(struct thStruct *)thStr;
 
-  int inicio= tid*baseIntervalo+1;
-  int final= (tid+1)*baseIntervalo;
+  int rowNum = th->thRow;
+  int tid = th->thId;
+  int inicio = th->index;
+  int final = th->end;
+  int rr = th->r;
+  int gg = th->g;
+  int bb = th->b;
 
-  
+
+pthread_mutex_lock(&mutexc);
 for (int j=inicio; j <= final ; j++)
 {//las columnas son el eje de las x
-    for (int i=1; i<image.rows; i++)
+    for (int i=1; i<rowNum; i++)
       {//las filas son el eje de las y  
         //if (tid ==9)       
             // cout<< j<<","<<i<< endl;  
@@ -70,13 +74,9 @@ for (int j=inicio; j <= final ; j++)
             p.x=j;
             p.y=i;
             coords.push(p); //se guardanlas coordenadas
-            pthread_mutex_lock(&mutexc);
             c++; //contador de objetos
             //creamos rgb randoms
-            int range= 255+1;
-            bb= rand()%range;
-            rr= rand()%range;
-            gg= rand()%range;
+            
             newreg.at<Vec3b>(i, j)= Vec3b(bb,gg,rr); //pintamos pixel
             while(!coords.empty())
             {  
@@ -114,10 +114,10 @@ for (int j=inicio; j <= final ; j++)
               }
               coords.pop();
             }
-            pthread_mutex_unlock(&mutexc);
-          } 
+          }  
       }                 
    }
+   pthread_mutex_unlock(&mutexc);
 }   
 
 void watershed(Mat image, Mat newreg){
@@ -128,23 +128,29 @@ void watershed(Mat image, Mat newreg){
     int rc;
     long t;
     void *status;
-    //joined threads
-   // pthread_attr_t attr;
-    /* Initialize and set thread detached attribute 
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);*/
+    
     baseIntervalo= row / NUM_THREADS; //intervalo por thread, base
-    start=clock(NULL);
+    start=clock();
+
     for(t=0; t<NUM_THREADS; t++){
-      // printf("In main: creating thread %ld\n", t);
-      rc = pthread_create(&threads[t], NULL , myThreadRoutine, (void *)t);
+      thStruct[t].thRow = baseIntervalo;
+      thStruct[t].thId = t;
+      thStruct[t].index = t*baseIntervalo;
+      thStruct[t].r = rand()%256;
+      thStruct[t].g = rand()%256;
+      thStruct[t].b = rand()%256;
+      if(i==NUM_THREADS-1){
+        thStruct[i].end = image.cols;
+      }
+      else{
+        thStruct[t].end = (t+1)*baseIntervalo;
+      }
+      pthread_create(&threads[t], NULL , myThreadRoutine,&thStruct[i]);
     }
-    /* Free attribute and wait for the other threads */
- //   pthread_attr_destroy(&attr);
     for(t=0; t<NUM_THREADS; t++){
-      rc = pthread_join(threads[t], &status);
+      pthread_join(threads[t], &status);
     }
-    end=clock(NULL);
+    end=clock();
 
 }
 
